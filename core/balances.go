@@ -184,7 +184,7 @@ func (bc *BaseContract) TokenBalanceAddWithTicker(
 	reason string,
 ) error {
 	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(bc.config.GetSymbol(), address, &types.Address{}, amount, reason)
+		stub.AddAccountingRecord(ticker, address, &types.Address{}, amount, reason)
 	}
 
 	parts := strings.Split(ticker, "_")
@@ -236,7 +236,7 @@ func (bc *BaseContract) TokenBalanceSubWithTicker(
 	reason string,
 ) error {
 	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(bc.config.GetSymbol(), address, &types.Address{}, amount, reason)
+		stub.AddAccountingRecord(ticker, address, &types.Address{}, amount, reason)
 	}
 
 	parts := strings.Split(ticker, "_")
