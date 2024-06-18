@@ -184,7 +184,8 @@ func (bc *BaseContract) TokenBalanceAddWithTicker(
 	reason string,
 ) error {
 	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(ticker, address, &types.Address{}, amount, reason)
+		accountingToken := getAccountingToken(ticker, bc.config.GetSymbol())
+		stub.AddAccountingRecord(accountingToken, address, &types.Address{}, amount, reason)
 	}
 
 	parts := strings.Split(ticker, "_")
@@ -236,7 +237,8 @@ func (bc *BaseContract) TokenBalanceSubWithTicker(
 	reason string,
 ) error {
 	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(ticker, address, &types.Address{}, amount, reason)
+		accountingToken := getAccountingToken(ticker, bc.config.GetSymbol())
+		stub.AddAccountingRecord(accountingToken, address, &types.Address{}, amount, reason)
 	}
 
 	parts := strings.Split(ticker, "_")
@@ -651,4 +653,14 @@ func tokensToMap(tokens []balance.TokenBalance) map[string]string {
 	}
 
 	return balances
+}
+
+// getAccountingToken returns the accounting token for a given ticker and symbol.
+// If the ticker starts with the symbol, it returns the ticker as is.
+// Otherwise, it concatenates the symbol and ticker with an underscore.
+func getAccountingToken(ticker string, symbol string) string {
+	if strings.HasPrefix(ticker, symbol) {
+		return ticker
+	}
+	return symbol + "_" + ticker
 }
