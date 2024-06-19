@@ -183,24 +183,21 @@ func (bc *BaseContract) TokenBalanceAddWithTicker(
 	ticker string,
 	reason string,
 ) error {
-	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(bc.config.GetSymbol(), address, &types.Address{}, amount, reason)
-	}
-
+	token, separator := "", ""
 	parts := strings.Split(ticker, "_")
-	lastPart := parts[len(parts)-1]
 
 	// If ticker consists of multiple parts separated by '_', it indicates
 	// internal subdivision into groups, bars, etc, so the balance should be accounted
 	// separately for each subdivision.
 	if len(parts) > 1 {
-		if err := balance.Add(bc.stub, balance.BalanceTypeToken, address.String(), lastPart, &amount.Int); err != nil {
-			return fmt.Errorf("failed to add token balance: %s", err.Error())
-		}
-	} else {
-		if err := balance.Add(bc.stub, balance.BalanceTypeToken, address.String(), "", &amount.Int); err != nil {
-			return fmt.Errorf("failed to add token balance: %s", err.Error())
-		}
+		separator = "_"
+		token = parts[len(parts)-1]
+	}
+	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
+		stub.AddAccountingRecord(bc.config.GetSymbol()+separator+token, address, &types.Address{}, amount, reason)
+	}
+	if err := balance.Add(bc.stub, balance.BalanceTypeToken, address.String(), token, &amount.Int); err != nil {
+		return fmt.Errorf("failed to add token balance: %s", err.Error())
 	}
 
 	return nil
@@ -235,24 +232,21 @@ func (bc *BaseContract) TokenBalanceSubWithTicker(
 	ticker string,
 	reason string,
 ) error {
-	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
-		stub.AddAccountingRecord(bc.config.GetSymbol(), address, &types.Address{}, amount, reason)
-	}
-
+	token, separator := "", ""
 	parts := strings.Split(ticker, "_")
-	lastPart := parts[len(parts)-1]
 
 	// If ticker consists of multiple parts separated by '_', it indicates
 	// internal subdivision of tokens, so the balance should be accounted
 	// separately for each subdivision.
 	if len(parts) > 1 {
-		if err := balance.Sub(bc.stub, balance.BalanceTypeToken, address.String(), lastPart, &amount.Int); err != nil {
-			return fmt.Errorf("failed to subtract token balance: %s", err.Error())
-		}
-	} else {
-		if err := balance.Sub(bc.stub, balance.BalanceTypeToken, address.String(), "", &amount.Int); err != nil {
-			return fmt.Errorf("failed to subtract token balance: %s", err.Error())
-		}
+		separator = "_"
+		token = parts[len(parts)-1]
+	}
+	if stub, ok := bc.GetStub().(*cachestub.TxCacheStub); ok {
+		stub.AddAccountingRecord(bc.config.GetSymbol()+separator+token, address, &types.Address{}, amount, reason)
+	}
+	if err := balance.Sub(bc.stub, balance.BalanceTypeToken, address.String(), token, &amount.Int); err != nil {
+		return fmt.Errorf("failed to subtract token balance: %s", err.Error())
 	}
 
 	return nil
