@@ -188,8 +188,8 @@ func TokenBalanceAddWithTicker(
 	if stub, ok := stub.(Accounting); ok {
 		stub.AddAccountingRecord(
 			symbol+separator+token,
-			address,
 			&types.Address{},
+			address,
 			amount,
 			reason,
 		)
