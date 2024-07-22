@@ -104,11 +104,11 @@ func (bc *BaseContract) AllowedBalanceGetLocked(token string, address *types.Add
 }
 
 func (bc *BaseContract) AllowedBalanceLock(token string, address *types.Address, amount *big.Int) error {
-	return ledger.AllowedBalanceLock(bc.GetStub(), bc.ContractConfig().GetSymbol(), token, address, amount)
+	return ledger.AllowedBalanceLock(bc.GetStub(), token, token, address, amount)
 }
 
 func (bc *BaseContract) AllowedBalanceUnLock(token string, address *types.Address, amount *big.Int) error {
-	return ledger.AllowedBalanceUnlock(bc.GetStub(), bc.ContractConfig().GetSymbol(), token, address, amount)
+	return ledger.AllowedBalanceUnlock(bc.GetStub(), token, token, address, amount)
 }
 
 func (bc *BaseContract) AllowedBalanceTransferLocked(token string, from *types.Address, to *types.Address, amount *big.Int, reason string) error {
