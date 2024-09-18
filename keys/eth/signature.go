@@ -3,16 +3,16 @@ package eth
 import (
 	"crypto/ecdsa"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	crypto2 "github.com/anoideaopen/foundation/keys/eth/crypto"
 )
 
 const signatureLength = 64
 
-// Sign calculates an ECDSA signature using Ethereum crypto functions
+// Sign calculates an ECDSA signature using copied Ethereum crypto functions
 func Sign(digest []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	const recoveryBits = 27
 
-	signature, err := crypto.Sign(digest, privateKey)
+	signature, err := crypto2.Sign(digest, privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -23,10 +23,10 @@ func Sign(digest []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 }
 
 // Verify checks that the given public key created signature over digest
-// using Ethereum crypto functions
+// using copied Ethereum crypto functions
 func Verify(publicKey, digest, signature []byte) bool {
 	if len(signature) > signatureLength {
 		signature = signature[:signatureLength]
 	}
-	return crypto.VerifySignature(publicKey, digest, signature)
+	return crypto2.VerifySignature(publicKey, digest, signature)
 }

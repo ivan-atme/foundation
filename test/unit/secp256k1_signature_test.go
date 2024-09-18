@@ -2,13 +2,14 @@ package unit
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
+	"strconv"
 	"testing"
 
 	"github.com/anoideaopen/foundation/keys/eth"
 	"github.com/anoideaopen/foundation/mock"
 	"github.com/anoideaopen/foundation/token"
 	"github.com/btcsuite/btcd/btcutil/base58"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,6 +29,18 @@ const (
 	ExpectedAmount    = 1000
 )
 
+var (
+	ErrEmptyString   = &decError{"empty hex string"}
+	ErrSyntax        = &decError{"invalid hex string"}
+	ErrMissingPrefix = &decError{"hex string without 0x prefix"}
+	ErrOddLength     = &decError{"hex string of odd length"}
+	ErrUint64Range   = &decError{"hex number > 64 bits"}
+)
+
+type decError struct{ msg string }
+
+func (err decError) Error() string { return err.msg }
+
 func Test_KeysEth(t *testing.T) {
 	const (
 		messageHex       = "0xb412a9afc250a81b76a64bf59f960839489577ccc5a9b545c574de11a2769455"
@@ -46,8 +59,8 @@ func Test_KeysEth(t *testing.T) {
 
 	t.Run("ethereum hash", func(t *testing.T) {
 		var (
-			message  = hexutil.MustDecode(messageHex)
-			expected = hexutil.MustDecode(expectedMessageHashHex)
+			message  = MustDecode(messageHex)
+			expected = MustDecode(expectedMessageHashHex)
 		)
 		digest = eth.Hash(message)
 		assert.Equal(t, expected, digest)
@@ -56,7 +69,7 @@ func Test_KeysEth(t *testing.T) {
 	t.Run("ethereum signature", func(t *testing.T) {
 		var (
 			err      error
-			expected = hexutil.MustDecode(expectedSignatureHex)
+			expected = MustDecode(expectedSignatureHex)
 		)
 		privateKey, err = eth.PrivateKeyFromBytes(base58.Decode(privateKeyBase58))
 		require.NoError(t, err)
@@ -102,4 +115,51 @@ func Test_Secp256k1Signatures(t *testing.T) {
 
 	owner.SignedInvoke(FiatChannelName, EmitFunctionName, user1.Address(), EmitAmount)
 	user1.BalanceShouldBe(FiatChannelName, ExpectedAmount)
+}
+
+// MustDecode decodes a hex string with 0x prefix. It panics for invalid input.
+// function was copied from github.com/ethereum/go-ethereum/common/hexutil
+func MustDecode(input string) []byte {
+	dec, err := Decode(input)
+	if err != nil {
+		panic(err)
+	}
+	return dec
+}
+
+// Decode decodes a hex string with 0x prefix.
+func Decode(input string) ([]byte, error) {
+	if len(input) == 0 {
+		return nil, ErrEmptyString
+	}
+	if !has0xPrefix(input) {
+		return nil, ErrMissingPrefix
+	}
+	b, err := hex.DecodeString(input[2:])
+	if err != nil {
+		err = mapError(err)
+	}
+	return b, err
+}
+
+func has0xPrefix(input string) bool {
+	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
+}
+
+func mapError(err error) error {
+	if err, ok := err.(*strconv.NumError); ok {
+		switch err.Err {
+		case strconv.ErrRange:
+			return ErrUint64Range
+		case strconv.ErrSyntax:
+			return ErrSyntax
+		}
+	}
+	if _, ok := err.(hex.InvalidByteError); ok {
+		return ErrSyntax
+	}
+	if err == hex.ErrLength {
+		return ErrOddLength
+	}
+	return err
 }
