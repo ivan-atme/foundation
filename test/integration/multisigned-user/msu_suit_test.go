@@ -1,16 +1,17 @@
-package basic
+package multisigned_user
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/anoideaopen/foundation/test/integration/cmn/runner"
+	"github.com/hyperledger/fabric/integration"
 	"github.com/hyperledger/fabric/integration/nwo"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestBasic(t *testing.T) {
+func TestMultisignedUser(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Basic Suite")
 }
@@ -40,3 +41,7 @@ var _ = SynchronizedAfterSuite(func() {
 }, func() {
 	buildServer.Shutdown()
 })
+
+func StartPort() int {
+	return integration.NWOBasePort.StartPortForNode()
+}
