@@ -3,12 +3,12 @@ package mock
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/anoideaopen/foundation/core/acl"
-	"github.com/anoideaopen/foundation/core/types"
 	st "github.com/anoideaopen/foundation/mock/stub"
 	pb "github.com/anoideaopen/foundation/proto"
 	"github.com/btcsuite/btcd/btcutil/base58"
@@ -22,6 +22,7 @@ import (
 const (
 	keyRight        = "acl_access_matrix"
 	keyAddressRight = "acl_access_matrix_principal_addresses"
+	keyUserID       = "userID" // For tests only. Prefix to keep userIDs in test state for furhter comparison.
 )
 
 // mockACL emulates alc chaincode, rights are stored in state
@@ -34,8 +35,10 @@ func (ma *mockACL) Init(_ shim.ChaincodeStubInterface) peer.Response { // stub
 func (ma *mockACL) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	fn, args := stub.GetFunctionAndParameters()
 	switch fn {
+	case acl.FnAddUser:
+		return ma.invokeAddUser(stub, args...)
 	case acl.FnCheckAddress:
-		return ma.invokeCheckAddress(args...)
+		return ma.invokeCheckAddress(stub, args...)
 	case acl.FnCheckKeys:
 		return ma.invokeCheckKeys(stub, args...)
 	case acl.FnGetAccountInfo:
@@ -61,17 +64,46 @@ func (ma *mockACL) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	}
 }
 
-func (ma *mockACL) invokeCheckAddress(args ...string) peer.Response {
-	addr, err := types.AddrFromBase58Check(args[0])
+func (ma *mockACL) invokeAddUser(stub shim.ChaincodeStubInterface, args ...string) peer.Response {
+	publicKeyBase58Encoded, userID := args[0], args[1]
+
+	bytes, err := decodeBase58PublicKey(publicKeyBase58Encoded)
 	if err != nil {
-		return shim.Error(err.Error())
+		return shim.Error("failed decoding public key: " + err.Error())
+	}
+	hashed := sha3.Sum256(bytes)
+
+	address := base58.CheckEncode(hashed[1:], hashed[0])
+	key, err := stub.CreateCompositeKey(keyUserID, []string{address})
+	if err != nil {
+		return shim.Error("create composite key: " + err.Error())
 	}
 
-	data, err := proto.Marshal((*pb.Address)(addr))
+	data, err := proto.Marshal(&pb.Address{
+		Address: append([]byte{hashed[0]}, hashed[1:]...)[:32],
+		UserID:  userID,
+	})
 	if err != nil {
-		return shim.Error(err.Error())
+		return shim.Error("proto marshal: " + err.Error())
 	}
-	return shim.Success(data)
+	err = stub.PutState(key, data)
+	if err != nil {
+		return shim.Error("put state: " + err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (ma *mockACL) invokeCheckAddress(stub shim.ChaincodeStubInterface, args ...string) peer.Response {
+	address := args[0]
+	key, err := stub.CreateCompositeKey(keyUserID, []string{address})
+	if err != nil {
+		return shim.Error("create composite key: " + err.Error())
+	}
+	pbAddressRaw, err := stub.GetState(key)
+	if err != nil {
+		return shim.Error("get state: " + err.Error())
+	}
+	return shim.Success(pbAddressRaw)
 }
 
 func (ma *mockACL) invokeCheckKeys(stub shim.ChaincodeStubInterface, args ...string) peer.Response {
@@ -454,4 +486,16 @@ func (ma *mockACL) invokeGetAddressesListForNominee(stub shim.ChaincodeStubInter
 	}
 
 	return shim.Success(rawAddresses)
+}
+
+// decodeBase58PublicKey decode public key from base58 to a byte array
+func decodeBase58PublicKey(encodedBase58PublicKey string) ([]byte, error) {
+	if len(encodedBase58PublicKey) == 0 {
+		return nil, errors.New("encoded base 58 public key is empty")
+	}
+	decode := base58.Decode(encodedBase58PublicKey)
+	if len(decode) == 0 {
+		return nil, fmt.Errorf("failed base58 decoding of key %s", encodedBase58PublicKey)
+	}
+	return decode, nil
 }

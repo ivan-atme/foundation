@@ -30,6 +30,7 @@ func TestGroupTxExecutorEmitAndTransfer(t *testing.T) {
 	require.Empty(t, initMsg)
 
 	user1 := ledger.NewWallet()
+	require.NoError(t, user1.AddUser(base58.Encode(user1.PublicKeyEd25519), "user1"))
 
 	_, err := owner.ExecuteSignedInvoke("fiat", "emit", user1.Address(), "1000")
 	require.NoError(t, err)
@@ -52,6 +53,7 @@ func TestGroupTxExecutorEmitAndTransfer(t *testing.T) {
 	require.Equal(t, feeAggregator.Address(), md.Fee.Address)
 
 	user2 := ledger.NewWallet()
+	require.NoError(t, user2.AddUser(base58.Encode(user2.PublicKeyEd25519), "user2"))
 	_, err = user1.ExecuteSignedInvoke("fiat", "transfer", user2.Address(), "400", "")
 	require.NoError(t, err)
 	user1.BalanceShouldBe("fiat", 500)

@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/btcsuite/btcd/btcutil v1.1.5
+	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/ddulesov/gogost v1.0.0
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/ethereum/go-ethereum v1.13.15

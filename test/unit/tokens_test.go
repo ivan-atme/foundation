@@ -9,6 +9,7 @@ import (
 	"github.com/anoideaopen/foundation/core/types/big"
 	"github.com/anoideaopen/foundation/mock"
 	"github.com/anoideaopen/foundation/token"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/stretchr/testify/require"
 )
 
@@ -168,6 +169,9 @@ func TestEmitTransfer(t *testing.T) {
 
 	user1 := ledger.NewWallet()
 	user2 := ledger.NewWallet()
+
+	require.NoError(t, user1.AddUser(base58.Encode(user1.PublicKeyEd25519), "user1"))
+	require.NoError(t, user2.AddUser(base58.Encode(user2.PublicKeyEd25519), "user2"))
 
 	err := owner.RawSignedInvokeWithErrorReturned("fiat", "emit", user1.Address(), "1000")
 	require.NoError(t, err)

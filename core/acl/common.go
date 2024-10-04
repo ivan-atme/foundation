@@ -9,6 +9,7 @@ const (
 
 // acl chaincode functions
 const (
+	FnAddUser                       = "addUser"
 	FnCheckAddress                  = "checkAddress"
 	FnCheckKeys                     = "checkKeys"
 	FnGetAccountInfo                = "getAccountInfo"

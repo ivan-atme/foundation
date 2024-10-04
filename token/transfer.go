@@ -113,7 +113,7 @@ func (bt *BaseToken) calcTransferFee(amount *big.Int, sender *types.Address, rec
 	if sender.UserID == "" {
 		fullSenderAddress, err := helpers.GetFullAddress(bt.GetStub(), sender.String())
 		if err != nil {
-			return nil, errors.New("failed to recive user id by sender address")
+			return nil, fmt.Errorf("failed to recive user id by sender address: %w", err)
 		}
 		sender = (*types.Address)(fullSenderAddress)
 	}

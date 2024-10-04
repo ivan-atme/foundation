@@ -8,6 +8,7 @@ import (
 	"github.com/anoideaopen/foundation/core/types"
 	ma "github.com/anoideaopen/foundation/mock"
 	"github.com/anoideaopen/foundation/proto"
+	"github.com/btcsuite/btcutil/base58"
 	pb "github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
@@ -27,6 +28,9 @@ func TestBaseTokenTxTransfer(t *testing.T) {
 	config := makeBaseTokenConfig("vt", "VT", 8,
 		issuer.Address(), feeSetter.Address(), feeAddressSetter.Address())
 	ledger.NewCC("vt", vt, config)
+
+	require.NoError(t, seller.AddUser(base58.Encode(seller.PublicKeyEd25519), "seller"))
+	require.NoError(t, buyer.AddUser(base58.Encode(buyer.PublicKeyEd25519), "buyer"))
 
 	issuer.SignedInvoke("vt", "emitToken", "10")
 	issuer.SignedInvoke("vt", "setRate", "buyToken", "usd", "100000000")
@@ -60,6 +64,8 @@ func TestTransferWithFee(t *testing.T) {
 	config := makeBaseTokenConfig("vt token", "VT", 8,
 		issuer.Address(), feeSetter.Address(), feeAddressSetter.Address())
 	ledger.NewCC("vt", vt, config)
+	require.NoError(t, issuer.AddUser(base58.Encode(issuer.PublicKeyEd25519), "issuer"))
+	require.NoError(t, user.AddUser(base58.Encode(user.PublicKeyEd25519), "user"))
 
 	issuer.SignedInvoke("vt", "emitToken", "101")
 
@@ -189,6 +195,8 @@ func TestTransferWithFeeWithNilTokenFee(t *testing.T) {
 	config := makeBaseTokenConfig(vtName, "VT", 8,
 		issuer.Address(), feeSetter.Address(), feeAddressSetter.Address())
 	ledger.NewCC("vt", vt, config)
+	require.NoError(t, issuer.AddUser(base58.Encode(issuer.PublicKeyEd25519), "issuer"))
+	require.NoError(t, user.AddUser(base58.Encode(user.PublicKeyEd25519), "user"))
 
 	issuer.SignedInvoke("vt", "emitToken", "101")
 
@@ -304,6 +312,8 @@ func TestTransferWithFeeWithWrongSymbol(t *testing.T) {
 		issuer.Address(), feeSetter.Address(), feeAddressSetter.Address())
 	ledger.NewCC("vt", vt, config)
 
+	require.NoError(t, issuer.AddUser(base58.Encode(issuer.PublicKeyEd25519), "issuer"))
+	require.NoError(t, user.AddUser(base58.Encode(user.PublicKeyEd25519), "user"))
 	issuer.SignedInvoke("vt", "emitToken", "101")
 
 	feeSetter.SignedInvoke("vt", "setFee", "VT", feeAmount, "1", "0")

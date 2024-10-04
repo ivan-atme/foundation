@@ -7,6 +7,7 @@ import (
 
 	"github.com/anoideaopen/foundation/core/types/big"
 	ma "github.com/anoideaopen/foundation/mock"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/stretchr/testify/require"
 )
@@ -103,6 +104,10 @@ func TestBaseToken_QueryGetFeeTransfer(t *testing.T) {
 			wantRespMsg:    "validation failed: 'amount must be non-negative'",
 		},
 	}
+
+	require.NoError(t, from.AddUser(base58.Encode(from.PublicKeyEd25519), "user1"))
+	require.NoError(t, to.AddUser(base58.Encode(to.PublicKeyEd25519), "user2"))
+
 	for testNumber, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			issuer := mock.NewWallet()

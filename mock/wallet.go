@@ -811,6 +811,24 @@ func (w *Wallet) NbInvoke(ch string, fn string, args ...string) (string, string)
 	return base58.Encode(nested), hash
 }
 
+// AddUser adds a userID to the ACL for further performing checkAddress
+func (w *Wallet) AddUser(publicKeyBase58 string, userID string) error {
+	const acl = "acl"
+	params := [][]byte{
+		[]byte("addUser"),
+		[]byte(publicKeyBase58),
+		[]byte(userID),
+	}
+	aclstub := w.ledger.GetStub(acl)
+	aclstub.TxID = txIDGen()
+	aclstub.MockPeerChaincodeWithChannel(acl, aclstub, acl)
+	rsp := aclstub.InvokeChaincode(acl, params, acl)
+	if rsp.GetStatus() != shim.OK {
+		return errors.New(rsp.GetMessage())
+	}
+	return nil
+}
+
 func (w *Wallet) verifyIncoming(ch string, fn string) error {
 	if ch == "" {
 		return errors.New("channel undefined")
