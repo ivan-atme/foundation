@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/anoideaopen/foundation/core/logger"
 	"github.com/anoideaopen/foundation/proto"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -86,6 +87,10 @@ func InstallTraceProvider(
 	tracerProvider = sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(r))
+	fmt.Println("sdktrace.NewTracerProvider() call with exporter client:", settings.GetEndpoint())
+	fmt.Println("serviceName:", serviceName)
+	logger.Logger().Info("sdktrace.NewTracerProvider() call with exporter client:", settings.GetEndpoint())
+	logger.Logger().Info("serviceName:", serviceName)
 }
 
 func getSecureClient(settings *proto.CollectorEndpoint, tlsConfig *tls.Config) otlptrace.Client {

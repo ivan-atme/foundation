@@ -382,6 +382,8 @@ func (bc *BaseContract) setupTracing() {
 			AuthorizationHeaderValue: os.Getenv(telemetry.TracingCollectorAuthHeaderValue),
 			TlsCa:                    os.Getenv(telemetry.TracingCollectorCaPem),
 		}
+		logger.Logger().Info("ok:", fmt.Sprintf("traceConfig: %+v", &traceConfig))
+		fmt.Printf("ok: traceConfig: %+v", &traceConfig)
 	}
 
 	telemetry.InstallTraceProvider(traceConfig, serviceName)
