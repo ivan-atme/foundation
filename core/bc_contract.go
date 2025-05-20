@@ -384,6 +384,7 @@ func (bc *BaseContract) setupTracing() {
 		}
 		logger.Logger().Info("ok:", fmt.Sprintf("traceConfig: %+v", &traceConfig))
 		fmt.Printf("ok: traceConfig: %+v", &traceConfig)
+		logger.Logger().Infof("ok: traceConfig: %+v", &traceConfig)
 	}
 
 	telemetry.InstallTraceProvider(traceConfig, serviceName)

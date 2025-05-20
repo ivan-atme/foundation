@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 
 	"github.com/anoideaopen/foundation/core/logger"
 	"github.com/anoideaopen/foundation/proto"
@@ -14,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -50,7 +49,7 @@ func InstallTraceProvider(
 
 	err := checkSettings(settings)
 	if err != nil {
-		fmt.Printf("failed to check collector settings: %s", err)
+		logger.Logger().Errorf("failed to check collector settings: %s", err)
 		return
 	}
 
@@ -62,7 +61,7 @@ func InstallTraceProvider(
 	if isSecure(settings) {
 		tlsConfig, err := getTLSConfig(settings.GetTlsCa())
 		if err != nil {
-			fmt.Printf("failed to load TLS configuration: %s", err)
+			logger.Logger().Errorf("failed to load TLS configuration: %s", err)
 			return
 		}
 		client = getSecureClient(settings, tlsConfig)
@@ -70,7 +69,7 @@ func InstallTraceProvider(
 
 	exporter, err := otlptrace.New(context.Background(), client)
 	if err != nil {
-		fmt.Printf("creating OTLP trace exporter: %v", err)
+		logger.Logger().Errorf("creating OTLP trace exporter: %v", err)
 		return
 	}
 
@@ -80,15 +79,13 @@ func InstallTraceProvider(
 			semconv.SchemaURL,
 			semconv.ServiceName(serviceName)))
 	if err != nil {
-		fmt.Printf("creating resource: %v", err)
+		logger.Logger().Errorf("creating resource: %v", err)
 		return
 	}
 
 	tracerProvider = sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(r))
-	fmt.Println("sdktrace.NewTracerProvider() call with exporter client:", settings.GetEndpoint())
-	fmt.Println("serviceName:", serviceName)
 	logger.Logger().Info("sdktrace.NewTracerProvider() call with exporter client:", settings.GetEndpoint())
 	logger.Logger().Info("serviceName:", serviceName)
 }
