@@ -228,8 +228,12 @@ func (e *TaskExecutor) validatedTxSenderMethodAndArgs(
 	}
 
 	argCount := e.Chaincode.Router().ArgCount(method)
-
-	return senderAddress, method, invocationArgs[:argCount-1], nil
+	argsToInvoke := invocationArgs[:argCount-1]
+	if stub.GetChannelID() == PlatformChaincodeName {
+		// include virtual chaincode name (imported package by platfrom chaincode)
+		argsToInvoke = invocationArgs[:argCount]
+	}
+	return senderAddress, method, argsToInvoke, nil
 }
 
 // ExecuteTask processes an individual task, returning a transaction response and event.
@@ -255,7 +259,7 @@ func (e *TaskExecutor) ExecuteTask(
 		if rc := recover(); rc != nil {
 			txResponse = &proto.TxResponse{Id: []byte(task.GetId()), Method: task.GetMethod(), Error: &proto.ResponseError{Error: "panic while executing task"}}
 			batchTxEvent = &proto.BatchTxEvent{Id: []byte(task.GetId()), Method: task.GetMethod(), Error: &proto.ResponseError{Error: "panic ExecuteTask"}}
-			log.Criticalf("Task id: %s, panic: %s", task.GetId(), string(debug.Stack()))
+			log.Criticalf("Task id: %s, rc: %+v, panic: %s", task.GetId(), rc, string(debug.Stack()))
 		}
 	}()
 

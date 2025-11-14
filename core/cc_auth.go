@@ -17,6 +17,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// PlatformChaincodeName is the name used for platform chaincode deployment that hosts multiple sub-chaincodes.
+// When chaincode and channel are both set to this value, virtual chaincode/channel names in args[1] and args[2]
+// are accepted to support zero-client-changes architecture.
+const PlatformChaincodeName = "platform"
+
 type invocationDetails struct {
 	chaincodeNameArg string
 	channelNameArg   string
@@ -113,6 +118,10 @@ func (cc *Chaincode) validateAndExtractInvocationContext(
 	}
 
 	invArgs := args[3 : 3+(cc.Router().ArgCount(method)-1)]
+	if stub.GetChannelID() == PlatformChaincodeName {
+		// keep chaincode name for proper routing
+		invArgs = args[2 : 3+(cc.Router().ArgCount(method)-1)]
+	}
 
 	return acl.GetAddress().GetAddress(), invArgs, nonce, nil
 }
@@ -242,20 +251,42 @@ func checkChaincodeAndChannelName(
 		return err
 	}
 
+	actualChaincodeName := invocationSpec.GetChaincodeSpec().GetChaincodeId().GetName()
+	actualChannelName := stub.GetChannelID()
+
+	// ========== PLATFORM CHAINCODE SUPPORT ==========
+	// When actual deployment is platform/platform, accept virtual channel and chaincode names.
+	// This allows clients to continue using virtual sub-chaincode names (usd, aed, ba, etc.)
+	// in args[1] (channel) and args[2] (chaincode) without any code changes.
+	// The platform router will extract the virtual chaincode name from args[2] and route accordingly.
+	if actualChaincodeName == PlatformChaincodeName && actualChannelName == PlatformChaincodeName {
+		// Validate that virtual names are non-empty
+		if chaincodeName == "" {
+			return errors.New("chaincode name in arguments is empty")
+		}
+		if channelName == "" {
+			return errors.New("channel name in arguments is empty")
+		}
+		// Virtual names accepted - validation successful
+		return nil
+	}
+	// ========== END PLATFORM CHAINCODE SUPPORT ==========
+
+	// Original validation for non-platform chaincodes
 	// Check the correspondence between the name and the channel of the chancode.
-	if chaincodeName != invocationSpec.GetChaincodeSpec().GetChaincodeId().GetName() {
+	if chaincodeName != actualChaincodeName {
 		return fmt.Errorf(
 			"incorrect chaincode name in args by index 1. found %s but expected %s",
 			chaincodeName,
-			invocationSpec.GetChaincodeSpec().GetChaincodeId().GetName(),
+			actualChaincodeName,
 		)
 	}
 
-	if channelName != stub.GetChannelID() {
+	if channelName != actualChannelName {
 		return fmt.Errorf(
 			"incorrect channel name in args by index 2. found %s but expected %s",
 			channelName,
-			stub.GetChannelID(),
+			actualChannelName,
 		)
 	}
 
